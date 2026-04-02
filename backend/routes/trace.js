@@ -9,15 +9,13 @@ router.get('/',async(req,res)=>{
     const {domain} = req.query;
 
     try {
-    const output = await runTraceroute(domain);
-    const parsed =  parseTraceroute(output);
+    const raw = await runTraceroute(domain);
+    const parsed = parseTraceroute(raw);
 
-    const enriched = [];
-
-    for (let hop of parsed) {
-      const data = await enrichHop(hop);
-      enriched.push(data);
-    }
+   
+    const enriched = await Promise.all(
+      parsed.map(hop => enrichHop(hop))
+    );
 
     res.json(enriched);
   } catch (err) {
