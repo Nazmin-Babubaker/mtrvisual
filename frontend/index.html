@@ -288,47 +288,56 @@ function findPrevGeo(hops, i) {
 // Draws a great-circle arc segment by segment to create a "tracing" animation.
 // A great-circle path is the shortest route on a sphere —
 // it curves on a flat map because the Earth is round.
+// Draws a simple straight diagonal line segment by segment
 function drawArc(from, to, color) {
   return new Promise(resolve => {
-    const pts  = greatCircle(from, to, 50)
-    let   drawn = [pts[0]]
+    // Linear interpolation: just a straight line divided into 50 steps
+    const steps = 50;
+    let pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const f = i / steps;
+      const lat = from[0] + (to[0] - from[0]) * f;
+      const lng = from[1] + (to[1] - from[1]) * f;
+      pts.push([lat, lng]);
+    }
 
+    let drawn = [pts[0]];
     const line = L.polyline(drawn, {
-      color, weight:1.8, opacity:0.75, dashArray:'6 4'
-    }).addTo(map)
-    mapLayers.push(line)
+      color, weight: 1.8, opacity: 0.75, dashArray: '6 4'
+    }).addTo(map);
+    mapLayers.push(line);
 
-    let idx = 1
+    let idx = 1;
     const iv = setInterval(() => {
-      if (idx >= pts.length) { clearInterval(iv); resolve(); return }
-      drawn.push(pts[idx++])
-      line.setLatLngs(drawn)
-    }, 16)   // ~60fps drawing speed
-  })
+      if (idx >= pts.length) { clearInterval(iv); resolve(); return; }
+      drawn.push(pts[idx++]);
+      line.setLatLngs(drawn);
+    }, 16);
+  });
 }
 
 // ── GREAT CIRCLE INTERPOLATION ──
 // Returns n points along the great-circle arc between two lat/lng pairs.
 // Uses spherical linear interpolation (slerp) — the same math flight
 // planning software uses to calculate fuel-optimal routes.
-function greatCircle(from, to, n) {
-  const r  = d => d * Math.PI / 180
-  const d_ = d => d * 180 / Math.PI
+// function greatCircle(from, to, n) {
+//   const r  = d => d * Math.PI / 180
+//   const d_ = d => d * 180 / Math.PI
 
-  const φ1=r(from[0]), λ1=r(from[1]), φ2=r(to[0]), λ2=r(to[1])
-  const d = 2*Math.asin(Math.sqrt(
-    Math.sin((φ2-φ1)/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin((λ2-λ1)/2)**2
-  ))
-  if (d < 0.0001) return [from, to]
+//   const φ1=r(from[0]), λ1=r(from[1]), φ2=r(to[0]), λ2=r(to[1])
+//   const d = 2*Math.asin(Math.sqrt(
+//     Math.sin((φ2-φ1)/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin((λ2-λ1)/2)**2
+//   ))
+//   if (d < 0.0001) return [from, to]
 
-  return Array.from({length:n+1}, (_,i) => {
-    const f=i/n, A=Math.sin((1-f)*d)/Math.sin(d), B=Math.sin(f*d)/Math.sin(d)
-    const x=A*Math.cos(φ1)*Math.cos(λ1)+B*Math.cos(φ2)*Math.cos(λ2)
-    const y=A*Math.cos(φ1)*Math.sin(λ1)+B*Math.cos(φ2)*Math.sin(λ2)
-    const z=A*Math.sin(φ1)              +B*Math.sin(φ2)
-    return [d_(Math.atan2(z,Math.sqrt(x*x+y*y))), d_(Math.atan2(y,x))]
-  })
-}
+//   return Array.from({length:n+1}, (_,i) => {
+//     const f=i/n, A=Math.sin((1-f)*d)/Math.sin(d), B=Math.sin(f*d)/Math.sin(d)
+//     const x=A*Math.cos(φ1)*Math.cos(λ1)+B*Math.cos(φ2)*Math.cos(λ2)
+//     const y=A*Math.cos(φ1)*Math.sin(λ1)+B*Math.cos(φ2)*Math.sin(λ2)
+//     const z=A*Math.sin(φ1)              +B*Math.sin(φ2)
+//     return [d_(Math.atan2(z,Math.sqrt(x*x+y*y))), d_(Math.atan2(y,x))]
+//   })
+// }
 
 // ── POPUP ──
 function buildPopup(hop, type, idx, total) {
