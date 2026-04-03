@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NetProbe — Route Visualiser</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #0b0f14;
+    --surface: #111720;
+    --border:  rgba(255,255,255,0.07);
+    --accent:  #00e5a0;
+    --text:    #d4dde8;
+    --muted:   #4a5a6a;
+    --mono:    'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+  body { background:var(--bg); color:var(--text); font-family:var(--mono); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+
+  header { display:flex; align-items:center; gap:12px; padding:14px 24px; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--surface); }
+  .logo { font-family:var(--display); font-size:1.2rem; font-weight:800; color:var(--accent); letter-spacing:-0.5px; }
+  .probe-row { display:flex; align-items:center; gap:10px; flex:1; }
+  .input-wrap { flex:1; display:flex; align-items:center; background:var(--bg); border:1px solid rgba(255,255,255,0.12); border-radius:6px; overflow:hidden; transition:border-color .2s; }
+  .input-wrap:focus-within { border-color:var(--accent); }
+  .input-prefix { padding:0 12px; font-size:0.7rem; color:var(--accent); border-right:1px solid rgba(255,255,255,0.07); white-space:nowrap; }
+  #url-input { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-family:var(--mono); font-size:0.82rem; padding:9px 12px; }
+  #url-input::placeholder { color:var(--muted); }
+  .btn-trace { padding:9px 20px; background:var(--accent); color:#0b0f14; border:none; border-radius:6px; font-family:var(--display); font-weight:700; font-size:0.78rem; cursor:pointer; transition:opacity .15s, transform .1s; white-space:nowrap; }
+  .btn-trace:hover   { opacity:.88; }
+  .btn-trace:active  { transform:scale(0.97); }
+  .btn-trace:disabled { opacity:.35; cursor:not-allowed; transform:none; }
+
+  .main { display:flex; flex:1; overflow:hidden; }
+
+  .sidebar { width:310px; flex-shrink:0; border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; background:var(--surface); }
+  .sidebar-header { padding:12px 16px; border-bottom:1px solid var(--border); font-size:0.65rem; text-transform:uppercase; letter-spacing:2px; color:var(--muted); }
+  .hop-list { flex:1; overflow-y:auto; padding:8px 0; }
+  .hop-list::-webkit-scrollbar { width:3px; }
+  .hop-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  .hop-item { display:flex; align-items:flex-start; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s; position:relative; }
+  .hop-item:hover { background:rgba(255,255,255,0.03); }
+  .hop-item.active { background:rgba(0,229,160,0.05); }
+  .hop-item:last-child { border-bottom:none; }
+  .hop-item::before { content:''; position:absolute; left:22px; top:32px; bottom:-10px; width:1px; background:var(--border); }
+  .hop-item:last-child::before { display:none; }
+
+  .hop-dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; margin-top:3px; border:2px solid; position:relative; z-index:1; background:var(--bg); transition:transform .2s; }
+  .hop-dot.pulsing { transform:scale(1.2); }
+  .hop-dot.pulsing::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:1px solid currentColor; animation:ripple 1s ease-out infinite; }
+  @keyframes ripple { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+
+  .hop-content { flex:1; min-width:0; }
+  .hop-num { font-size:0.62rem; color:var(--muted); margin-bottom:2px; }
+  .hop-host { font-size:0.75rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; }
+  .hop-place { font-size:0.68rem; color:var(--muted); margin-top:2px; }
+  .hop-org   { font-size:0.65rem; color:var(--muted); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hop-rtt   { font-size:0.72rem; font-weight:500; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+  .hop-loss  { font-size:0.62rem; color:var(--muted); text-align:right; margin-top:2px; }
+  .hop-loss.bad { color:#f87171; }
+
+  .state-box { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; flex:1; text-align:center; padding:2rem; color:var(--muted); }
+  .state-title { font-family:var(--display); font-size:0.9rem; color:var(--text); }
+  .state-sub { font-size:0.72rem; line-height:1.6; max-width:220px; }
+  .spinner { width:28px; height:28px; border:2px solid rgba(255,255,255,0.08); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .stats-bar { padding:10px 16px; border-top:1px solid var(--border); display:flex; gap:16px; flex-shrink:0; }
+  .stat { display:flex; flex-direction:column; gap:2px; }
+  .stat-val { font-family:var(--display); font-size:1rem; font-weight:700; color:var(--accent); }
+  .stat-label { font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+  .map-wrap { flex:1; position:relative; }
+  #map { width:100%; height:100%; }
+
+  .leaflet-control-attribution { background:rgba(11,15,20,0.8)!important; color:var(--muted)!important; font-size:10px!important; font-family:var(--mono)!important; }
+  .leaflet-control-attribution a { color:var(--muted)!important; }
+  .leaflet-control-zoom a { background:var(--surface)!important; color:var(--text)!important; border-color:var(--border)!important; }
+
+  .map-legend { position:absolute; bottom:32px; right:12px; z-index:1000; background:rgba(11,15,20,0.88); border:1px solid var(--border); border-radius:6px; padding:10px 14px; display:flex; flex-direction:column; gap:6px; }
+  .legend-item { display:flex; align-items:center; gap:8px; font-size:0.65rem; color:var(--muted); }
+  .legend-dot { width:9px; height:9px; border-radius:50%; border:2px solid; flex-shrink:0; }
+
+  .leaflet-popup-content-wrapper { background:var(--surface)!important; border:1px solid var(--border)!important; border-radius:6px!important; box-shadow:none!important; color:var(--text)!important; font-family:var(--mono)!important; font-size:12px!important; }
+  .leaflet-popup-tip { background:var(--surface)!important; }
+  .leaflet-popup-content { margin:10px 14px!important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">NetProbe</div>
+  <div class="probe-row">
+    <div class="input-wrap">
+      <div class="input-prefix">TRACE →</div>
+      <input id="url-input" type="text" placeholder="github.com  or  https://cloudflare.com" spellcheck="false"/>
+    </div>
+    <button class="btn-trace" id="trace-btn" onclick="startTrace()">Trace route</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-header">Route hops</div>
+    <div class="hop-list" id="hop-list">
+      <div class="state-box">
+        <div class="state-title">No trace yet</div>
+        <div class="state-sub">Enter any domain to see the physical path your packets take across the internet.</div>
+      </div>
+    </div>
+    <div class="stats-bar" id="stats-bar" style="display:none">
+      <div class="stat"><div class="stat-val" id="stat-hops">—</div><div class="stat-label">total hops</div></div>
+      <div class="stat"><div class="stat-val" id="stat-geo">—</div><div class="stat-label">geolocated</div></div>
+      <div class="stat"><div class="stat-val" id="stat-rtt">—</div><div class="stat-label">final RTT</div></div>
+    </div>
+  </div>
+
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="border-color:#94a3b8"></div>Local / private</div>
+      <div class="legend-item"><div class="legend-dot" style="border-color:#00aaff"></div>ISP / transit</div>
+      <div class="legend-item"><div class="legend-dot" style="border-color:#f59e0b"></div>CDN edge</div>
+      <div class="legend-item"><div class="legend-dot" style="border-color:#00e5a0"></div>Destination</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const API = 'http://localhost:5000'
+
+// ── MAP INIT ──
+const map = L.map('map', { center:[20,0], zoom:2, zoomControl:true })
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution:'© OpenStreetMap © CartoDB', subdomains:'abcd', maxZoom:19
+}).addTo(map)
+
+// ── HOP CLASSIFICATION ──
+// We look at the org string from ipinfo to decide what kind of network this hop is on
+const CDN_KEYWORDS = ['cloudflare','akamai','fastly','cloudfront','amazon','google','microsoft','azure','vercel','netlify']
+
+function classifyHop(hop, isLast) {
+  if (isLast) return 'origin'
+  if (!hop.ip || !hop.geo) return 'local'
+  const org = (hop.geo.org || '').toLowerCase()
+  if (CDN_KEYWORDS.some(k => org.includes(k))) return 'cdn'
+  return 'isp'
+}
+
+const HOP_COLORS = { local:'#94a3b8', isp:'#00aaff', cdn:'#f59e0b', origin:'#00e5a0' }
+
+// ── STATE ──
+let mapLayers = []
+let hopItems  = []
+
+function clearMap() {
+  mapLayers.forEach(l => map.removeLayer(l))
+  mapLayers = []
+}
+
+// ── MAIN TRACE ──
+async function startTrace() {
+  const input = document.getElementById('url-input').value.trim()
+  if (!input) return
+
+  const btn = document.getElementById('trace-btn')
+  btn.disabled = true
+  btn.textContent = 'Running…'
+  clearMap()
+  showLoading()
+
+  try {
+    const res  = await fetch(`${API}/trace`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ url: input })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Trace failed')
+
+    renderSidebar(data.hops)
+    await animateTrace(data.hops)
+    showStats(data)
+  } catch(e) {
+    showError(e.message)
+  } finally {
+    btn.disabled = false
+    btn.textContent = 'Trace route'
+  }
+}
+
+// ── SIDEBAR ──
+function renderSidebar(hops) {
+  const list = document.getElementById('hop-list')
+  list.innerHTML = ''
+  hopItems = []
+
+  hops.forEach((hop, i) => {
+    const isLast = i === hops.length - 1
+    const type   = classifyHop(hop, isLast)
+    const color  = HOP_COLORS[type]
+    const hasgeo = hop.geo?.lat != null
+
+    const item = document.createElement('div')
+    item.className = 'hop-item'
+    if (hasgeo) item.onclick = () => map.flyTo([hop.geo.lat, hop.geo.lng], 6, {duration:1})
+
+    // Colour the RTT: fast = green, medium = amber, slow = red
+    const rttColor = !hop.avgRtt ? 'var(--muted)' : hop.avgRtt < 50 ? '#00e5a0' : hop.avgRtt < 150 ? '#f59e0b' : '#f87171'
+
+    item.innerHTML = `
+      <div class="hop-dot" style="border-color:${color};color:${color}"></div>
+      <div class="hop-content">
+        <div class="hop-num">hop ${hop.hop}</div>
+        <div class="hop-host">${!hop.ip ? '??? (silent router)' : hop.ip}</div>
+        ${hasgeo ? `<div class="hop-place">${[hop.geo.city, hop.geo.country].filter(Boolean).join(', ')}</div>` : ''}
+        ${hop.geo?.org ? `<div class="hop-org">${hop.geo.org}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end">
+        <div class="hop-rtt" style="color:${rttColor}">${hop.avgRtt ? hop.avgRtt.toFixed(1)+'ms' : '—'}</div>
+        ${hop.loss > 0 ? `<div class="hop-loss ${hop.loss>20?'bad':''}">${hop.loss}% loss</div>` : ''}
+      </div>`
+
+    list.appendChild(item)
+    hopItems.push(item)
+  })
+}
+
+// ── MAP ANIMATION ──
+// We step through hops one by one.
+// For each hop with geo data: place a marker, draw an arc from the previous geolocated hop.
+async function animateTrace(hops) {
+  const geoHops = hops.filter(h => h.geo?.lat != null)
+  if (!geoHops.length) return
+
+  // Zoom map to fit all the hops
+  const bounds = L.latLngBounds(geoHops.map(h => [h.geo.lat, h.geo.lng]))
+  map.fitBounds(bounds, { padding:[60,60], animate:true, duration:1 })
+  await sleep(900)
+
+  for (let i = 0; i < hops.length; i++) {
+    const hop    = hops[i]
+    const isLast = i === hops.length - 1
+    const type   = classifyHop(hop, isLast)
+    const color  = HOP_COLORS[type]
+
+    // Highlight this hop in the sidebar
+    hopItems[i]?.classList.add('active')
+    const dot = hopItems[i]?.querySelector('.hop-dot')
+    if (dot) dot.classList.add('pulsing')
+
+    if (hop.geo?.lat != null) {
+      // Drop a marker at this hop's real-world location
+      const marker = L.circleMarker([hop.geo.lat, hop.geo.lng], {
+        radius:      isLast ? 9 : i === 0 ? 7 : 5,
+        color,
+        weight:      2,
+        fillColor:   '#0b0f14',
+        fillOpacity: 1,
+      }).addTo(map)
+      marker.bindPopup(buildPopup(hop, type, i, hops.length))
+      mapLayers.push(marker)
+
+      // Draw an animated arc from the previous geolocated hop to here
+      const prev = findPrevGeo(hops, i)
+      if (prev) {
+        await drawArc([prev.geo.lat, prev.geo.lng], [hop.geo.lat, hop.geo.lng], color)
+      }
+    }
+
+    // Un-pulse the hop we just finished
+    if (i > 0) hopItems[i-1]?.querySelector('.hop-dot')?.classList.remove('pulsing')
+    await sleep(isLast ? 0 : 280)
+  }
+}
+
+function findPrevGeo(hops, i) {
+  for (let j = i-1; j >= 0; j--) if (hops[j].geo?.lat != null) return hops[j]
+  return null
+}
+
+// ── ANIMATED ARC ──
+// Draws a great-circle arc segment by segment to create a "tracing" animation.
+// A great-circle path is the shortest route on a sphere —
+// it curves on a flat map because the Earth is round.
+function drawArc(from, to, color) {
+  return new Promise(resolve => {
+    const pts  = greatCircle(from, to, 50)
+    let   drawn = [pts[0]]
+
+    const line = L.polyline(drawn, {
+      color, weight:1.8, opacity:0.75, dashArray:'6 4'
+    }).addTo(map)
+    mapLayers.push(line)
+
+    let idx = 1
+    const iv = setInterval(() => {
+      if (idx >= pts.length) { clearInterval(iv); resolve(); return }
+      drawn.push(pts[idx++])
+      line.setLatLngs(drawn)
+    }, 16)   // ~60fps drawing speed
+  })
+}
+
+// ── GREAT CIRCLE INTERPOLATION ──
+// Returns n points along the great-circle arc between two lat/lng pairs.
+// Uses spherical linear interpolation (slerp) — the same math flight
+// planning software uses to calculate fuel-optimal routes.
+function greatCircle(from, to, n) {
+  const r  = d => d * Math.PI / 180
+  const d_ = d => d * 180 / Math.PI
+
+  const φ1=r(from[0]), λ1=r(from[1]), φ2=r(to[0]), λ2=r(to[1])
+  const d = 2*Math.asin(Math.sqrt(
+    Math.sin((φ2-φ1)/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin((λ2-λ1)/2)**2
+  ))
+  if (d < 0.0001) return [from, to]
+
+  return Array.from({length:n+1}, (_,i) => {
+    const f=i/n, A=Math.sin((1-f)*d)/Math.sin(d), B=Math.sin(f*d)/Math.sin(d)
+    const x=A*Math.cos(φ1)*Math.cos(λ1)+B*Math.cos(φ2)*Math.cos(λ2)
+    const y=A*Math.cos(φ1)*Math.sin(λ1)+B*Math.cos(φ2)*Math.sin(λ2)
+    const z=A*Math.sin(φ1)              +B*Math.sin(φ2)
+    return [d_(Math.atan2(z,Math.sqrt(x*x+y*y))), d_(Math.atan2(y,x))]
+  })
+}
+
+// ── POPUP ──
+function buildPopup(hop, type, idx, total) {
+  const g = hop.geo
+  return `
+    <div style="min-width:165px">
+      <div style="font-size:11px;color:#4a5a6a;margin-bottom:5px">hop ${hop.hop} · ${type}</div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px;color:${HOP_COLORS[type]}">${hop.ip||'???'}</div>
+      ${g?.city    ? `<div style="font-size:11px;margin-bottom:2px">${[g.city,g.region,g.country].filter(Boolean).join(', ')}</div>` : ''}
+      ${g?.org     ? `<div style="font-size:11px;color:#4a5a6a;margin-bottom:6px">${g.org}</div>` : ''}
+      ${hop.avgRtt ? `<div style="font-size:12px">RTT: <span style="color:#00e5a0">${hop.avgRtt.toFixed(1)} ms</span></div>` : ''}
+      ${hop.loss>0 ? `<div style="font-size:11px;color:#f87171">${hop.loss}% packet loss</div>` : ''}
+    </div>`
+}
+
+// ── UI STATES ──
+function showLoading() {
+  document.getElementById('stats-bar').style.display = 'none'
+  document.getElementById('hop-list').innerHTML = `
+    <div class="state-box">
+      <div class="spinner"></div>
+      <div class="state-title">Tracing route…</div>
+      <div class="state-sub">mtr sends 5 probes per hop — usually takes 10–20 seconds</div>
+    </div>`
+}
+
+function showError(msg) {
+  document.getElementById('hop-list').innerHTML = `
+    <div class="state-box">
+      <div class="state-title" style="color:#f87171">Trace failed</div>
+      <div class="state-sub" style="color:#f87171">${msg}</div>
+    </div>`
+}
+
+function showStats(data) {
+  const lastRtt = [...data.hops].reverse().find(h => h.avgRtt > 0)?.avgRtt
+  document.getElementById('stat-hops').textContent = data.hops.length
+  document.getElementById('stat-geo').textContent  = data.geoCount
+  document.getElementById('stat-rtt').textContent  = lastRtt ? lastRtt.toFixed(0)+'ms' : '—'
+  document.getElementById('stats-bar').style.display = 'flex'
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+document.getElementById('url-input').addEventListener('keydown', e => { if(e.key==='Enter') startTrace() })
+</script>
+</body>
+</html>

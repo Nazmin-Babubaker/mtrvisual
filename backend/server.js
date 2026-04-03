@@ -26,8 +26,8 @@ function extractHostname(input) {
   }
 }
 
-app.get('/trace', async (req, res) => {
-  let { url } = req.query
+app.post('/trace', async (req, res) => {
+  let { url } = req.body
 
   if (!url) return res.status(400).json({ error: 'URL is required' })
 
