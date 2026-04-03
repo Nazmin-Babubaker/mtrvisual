@@ -1,27 +1,24 @@
-import express from 'express';
-import { runTraceroute } from '../utils/traceroute.js';
-import { parseTraceroute } from '../utils/parser.js';
-import { enrichHop } from "../utils/geo.js";
+import {exec} from 'child_process'
+import {promisfy} from 'util'
 
-const router = express.Router();
+const execAsunc = promisfy(exec)
 
-router.get('/',async(req,res)=>{
-    const {domain} = req.query;
+export async function runMtr(hostname){
 
-    try {
-    const raw = await runTraceroute(domain);
-    const parsed = parseTraceroute(raw);
+  const cmd  = `mtr --report --report-cycles 5 --no-dns --json ${hostname}`
 
-   
-    const enriched = await Promise.all(
-      parsed.map(hop => enrichHop(hop))
-    );
+  const { stdout } = await execAsync(cmd, { timeout: 30000 })
+  const parsed = JSON.parse(stdout)
+  const hubs   = parsed?.report?.hubs ?? []
 
-    res.json(enriched);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+
+  return hubs.map(hub => ({
+    hop:    hub.count,
+    ip:     hub.host === '???' ? null : hub.host,   
+    loss:   hub['Loss%'] ?? 0,
+    avgRtt: hub['Avg']   ?? 0,
     
+  }))
 
-})
-export default router;
+
+}
