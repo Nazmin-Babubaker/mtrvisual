@@ -1,7 +1,7 @@
 import {exec} from 'child_process'
-import {promisfy} from 'util'
+import {promisify} from 'util'
 
-const execAsunc = promisfy(exec)
+const execAsync = promisify(exec)
 
 export async function runMtr(hostname){
 
