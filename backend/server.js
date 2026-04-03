@@ -1,6 +1,6 @@
 import express from 'express';
 import { configDotenv } from 'dotenv';
-import trace from './routes/trace.js';
+import {runMtr} from './utils/mtr.js';
 configDotenv();
 
 

@@ -1,80 +1,38 @@
-import fetch from "node-fetch";
+const cache = new Map()
 
-// Check if IP is private
-function isPrivateIP(ip) {
-  return (
-    ip.startsWith("192.168.") ||
-    ip.startsWith("10.") ||
-    ip.startsWith("172.")
-  );
-}
-
-// Classify network type
-function classify(ip, geoData) {
-  if (!ip) return "unknown";
-
-  if (isPrivateIP(ip)) return "local";
-
-  const org = geoData.org || geoData.isp || "";
-
-  if (
-    org.includes("Google") ||
-    org.includes("Amazon") ||
-    org.includes("Microsoft") ||
-    org.includes("Cloudflare")
-  ) {
-    return "company";
-  }
-
-  return "isp";
-}
-
-// Main function
-export async function enrichHop(hop) {
-  const { ip } = hop;
-
-  // Handle missing IP
-  if (!ip) {
-    return {
-      ...hop,
-      type: "unknown",
-      lat: null,
-      lon: null
-    };
-  }
-
-  // Handle local IP
-  if (isPrivateIP(ip)) {
-    return {
-      ...hop,
-      type: "local",
-      lat: null,
-      lon: null
-    };
-  }
+export async function geolocateIP(ip) {
+  if (!ip) return null                    
+  if (cache.has(ip)) return cache.get(ip) 
 
   try {
-    const res = await fetch(`http://ip-api.com/json/${ip}`);
-    const data = await res.json();
+    const token = process.env.IPINFO_TOKEN
+    const url   = `https://ipinfo.io/${ip}/json${token ? `?token=${token}` : ''}`
+    const res   = await fetch(url)
+    const data  = await res.json()
 
-    const type = classify(ip, data);
+    const [lat, lng] = (data.loc ?? '').split(',').map(Number)
 
-    return {
-      ...hop,
-      type,
-      lat: data.lat,
-      lon: data.lon,
-      city: data.city,
-      country: data.country,
-      isp: data.isp,
-      org: data.org
-    };
-  } catch (err) {
-    return {
-      ...hop,
-      type: "unknown",
-      lat: null,
-      lon: null
-    };
+     const result = {
+      lat:  isNaN(lat) ? null : lat,
+      lng:  isNaN(lng) ? null : lng,
+      city: data.city    ?? null,
+      region: data.region ?? null,
+      country: data.country ?? null,
+      org:  data.org     ?? null,   
+    }
+
+   cache.set(ip, result)
+    return result
+  } catch {
+    return null   
   }
+}
+
+export async function geolocateHops(hops) {
+  const results = await Promise.all(hops.map(hop => geolocateIP(hop.ip)))
+
+  return hops.map((hop, i) => ({
+    ...hop,
+    geo: results[i]   
+  }))
 }
