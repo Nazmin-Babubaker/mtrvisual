@@ -103,12 +103,51 @@
   .leaflet-popup-content-wrapper { background:var(--surface)!important; border:1px solid var(--border)!important; border-radius:6px!important; box-shadow:none!important; color:var(--text)!important; font-family:var(--mono)!important; font-size:12px!important; }
   .leaflet-popup-tip { background:var(--surface)!important; }
   .leaflet-popup-content { margin:10px 14px!important; }
+  /* Stack panels instead of side-by-side */
+  .view-container { flex: 1; position: relative; overflow: hidden; background: #000; }
+  
+  .panel { 
+    position: absolute; 
+    inset: 0; 
+    transition: opacity 0.4s ease, visibility 0.4s; 
+    background: var(--bg);
+  }
+
+  /* Hidden state */
+  .panel.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  /* Toggle Switch in Header */
+  .view-toggle {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+    margin-right: 12px;
+  }
+  .toggle-btn {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    cursor: pointer;
+    border-radius: 4px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .toggle-btn.active { background: var(--surface); color: var(--accent); }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">NetProbe</div>
+  <div class="view-toggle">
+    <button class="toggle-btn active" id="btn-map" onclick="switchView('map')">2D Map</button>
+    <button class="toggle-btn" id="btn-globe" onclick="switchView('globe')">3D Globe</button>
+  </div>
   <div class="probe-row">
     <div class="input-wrap">
       <div class="input-prefix">TRACE →</div>
@@ -137,8 +176,8 @@
     </div>
 
     <!-- Split view: left 2D map, right 3D globe -->
-    <div class="split-view">
-      <div class="panel panel-left">
+    <div class="view-container">
+      <div id="panel-map" class="panel">
         <div id="map" style="height:100%; width:100%;"></div>
         <div class="map-legend">
           <div class="legend-item"><div class="legend-dot" style="border-color:#94a3b8"></div>Local / private</div>
@@ -147,7 +186,7 @@
           <div class="legend-item"><div class="legend-dot" style="border-color:#00e5a0"></div>Destination</div>
         </div>
       </div>
-      <div class="panel panel-right">
+      <div id="panel-globe" class="panel hidden">
         <div id="globe-container"></div>
         <div class="globe-label">🌍 3D EARTH · ANIMATED ROUTE</div>
       </div>
@@ -579,6 +618,28 @@ const earthMaterial = new THREE.MeshBasicMaterial({ map: earthTexture });
   }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   document.getElementById('url-input').addEventListener('keydown', e => { if(e.key==='Enter') startTrace(); });
+
+  function switchView(type) {
+  const mapPanel = document.getElementById('panel-map');
+  const globePanel = document.getElementById('panel-globe');
+  const btnMap = document.getElementById('btn-map');
+  const btnGlobe = document.getElementById('btn-globe');
+
+  if (type === 'map') {
+    mapPanel.classList.remove('hidden');
+    globePanel.classList.add('hidden');
+    btnMap.classList.add('active');
+    btnGlobe.classList.remove('active');
+  } else {
+    mapPanel.classList.add('hidden');
+    globePanel.classList.remove('hidden');
+    btnMap.classList.remove('active');
+    btnGlobe.classList.add('active');
+    
+    // Trigger a resize for Three.js so the globe doesn't look stretched
+    window.dispatchEvent(new Event('resize'));
+  }
+}
 </script>
 </body>
 </html>
