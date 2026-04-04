@@ -209,7 +209,7 @@
   const earthGeometry = new THREE.SphereGeometry(1, 128, 128);
   const textureLoader = new THREE.TextureLoader();
   const earthTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
-  const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture, roughness: 0.5, metalness: 0.1 });
+const earthMaterial = new THREE.MeshBasicMaterial({ map: earthTexture });
   const earth = new THREE.Mesh(earthGeometry, earthMaterial);
   scene.add(earth);
   
@@ -219,15 +219,15 @@
   const atmosphere = new THREE.Mesh(glowGeometry, glowMaterial);
   scene.add(atmosphere);
   
-  // Lighting
-  const ambientLight = new THREE.AmbientLight(0x555555);
-  scene.add(ambientLight);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  dirLight.position.set(5, 3, 5);
-  scene.add(dirLight);
-  const backLight = new THREE.PointLight(0x4466cc, 0.3);
-  backLight.position.set(-2, -1, -3);
-  scene.add(backLight);
+  // // Lighting
+  // const ambientLight = new THREE.AmbientLight(0x555555);
+  // scene.add(ambientLight);
+  // const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  // dirLight.position.set(5, 3, 5);
+  // scene.add(dirLight);
+  // const backLight = new THREE.PointLight(0x4466cc, 0.3);
+  // backLight.position.set(-2, -1, -3);
+  // scene.add(backLight);
   
   // Helper: lat/lng to Vector3 (radius 1)
   function latLngToVector3(lat, lng, radius = 1.01) {
