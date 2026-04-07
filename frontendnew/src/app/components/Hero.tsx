@@ -16,10 +16,7 @@ export default function Hero() {
           NETWORK TRACE VISUALIZER
         </p>
 
-        {/* MAIN TITLE */}
-        <h1 className="font-[var(--font-syne)] text-6xl md:text-8xl tracking-widest font-bold">
-          MTR
-        </h1>
+     
 
         {/* Sub text */}
         <p className="mt-4 text-sm text-gray-400 max-w-md">
