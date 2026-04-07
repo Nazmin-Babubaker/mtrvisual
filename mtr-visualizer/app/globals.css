@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #0070f3;
+  --color-background: #050505;
+  --color-panel: #0a0a0a;
+  --color-border: #1a1a1a;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+}
+
+/* Hide scrollbars for the immersive visualizer feel */
+::-webkit-scrollbar {
+  display: none;
+}
+
+html, body {
+  overflow: hidden;
+  height: 100%;
+  background: var(--color-background);
+}
+
+@layer utilities {
+  /* This creates a subtle glow effect on text */
+  .text-glow {
+    text-shadow: 0 0 30px rgba(0, 112, 243, 0.4);
+  }
+}
+
+/* Add a scanline effect for the "Advanced" look */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+              linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 4px, 3px 100%;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.1;
+}
