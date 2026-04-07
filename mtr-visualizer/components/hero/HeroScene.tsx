@@ -9,7 +9,7 @@ import { Bloom, EffectComposer, Noise } from '@react-three/postprocessing';
 function angularVelocity(r: number, maxR: number): number {
   // Flat rotation curve approximation — fast rise, then plateau
   const normalized = r / maxR;
-  return 0.12 / (normalized + 0.08);
+  return 0.04 / (normalized + 0.08);
 }
 
 function GalaxySpiral({ count = 12000, radius = 14 }) {
@@ -181,7 +181,7 @@ function GalaxySpiral({ count = 12000, radius = 14 }) {
 // Slow orbital camera drift for depth
 function CameraDrift() {
   useFrame((state) => {
-    const t = state.clock.elapsedTime * 0.04;
+    const t = state.clock.elapsedTime * 0.012;
     state.camera.position.x = Math.sin(t) * 1.2;
     state.camera.position.y = 2 + Math.sin(t * 0.7) * 0.8;
     state.camera.position.z = 8 + Math.cos(t * 0.5) * 1.5;
@@ -208,7 +208,7 @@ export default function HeroScene() {
           factor={3.5}
           saturation={0.2}
           fade
-          speed={0.8}
+          speed={0.3}
         />
 
         <EffectComposer disableNormalPass>
