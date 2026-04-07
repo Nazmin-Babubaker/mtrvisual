@@ -1,48 +1,69 @@
 "use client";
 import { useState } from "react";
-import HeroScene from "@/components/hero/HeroScene"; // Import the new scene
+import HeroScene from "@/components/hero/HeroScene";
 
 export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-background font-mono antialiased">
-      {/* 1. THE HERO STATE (Cinematic Entry) */}
+      {/* 1. THE HERO STATE */}
       {!hasStarted && (
         <div className="relative h-full w-full">
-          {/* THE 3D GALAXY BACKGROUND */}
           <HeroScene />
 
-          {/* THE HERO CONTENT OVERLAY */}
+          {/* CONTENT OVERLAY - Changed 'justify-center' to 'justify-start' and added padding-top */}
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-start pt-24 md:pt-32 text-center px-4 overflow-hidden">
+            
+            <div className="space-y-8 max-w-5xl">
+              {/* TITLE: Added tracking-in-expand and blur-reveal */}
+              <div className="relative inline-block">
+                <div className="absolute -inset-10 bg-brand/10 blur-[120px] rounded-full opacity-40 animate-pulse" />
+                <h1 className="relative text-7xl md:text-[140px] font-black italic uppercase tracking-tighter 
+                               animate-in fade-in zoom-in-95 blur-in-md duration-1000 ease-out 
+                               [animation-fill-mode:backwards]">
+                  MTR_<span className="text-brand text-glow">VISUAL</span>
+                </h1>
+              </div>
 
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-4">
-      <div className="space-y-6 max-w-4xl">
-        {/* Added a subtle glow behind the text */}
-        <div className="relative inline-block">
-            <div className="absolute -inset-8 bg-brand/20 blur-[100px] rounded-full opacity-50" />
-            <h1 className="relative text-8xl md:text-[160px] font-black tracking-tighter italic uppercase animate-in slide-in-from-top-12 fade-in duration-1000 ease-out">
-                MTR_<span className="text-brand text-glow">VISUAL</span>
-            </h1>
-        </div>
-
-        <p className="max-w-xl mx-auto text-zinc-400 font-medium text-sm md:text-base leading-relaxed animate-in slide-in-from-bottom-6 fade-in duration-1000 delay-300 ease-out fill-mode-both">
-          <span className="text-white font-bold block mb-2 uppercase tracking-widest text-[10px]">System Status: Operational</span>
-          Advanced network hop visualization engine. Detect and map the physical path of IP packets across the global internet backbone in real-time.
-        </p>
+              {/* DESCRIPTION: Added a staggered slide-up with tracking animation */}
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500 [animation-fill-mode:backwards]">
+                <div className="flex items-center justify-center gap-3">
+                  <span className="h-[1px] w-8 bg-zinc-800" />
+                  <span className="text-brand font-bold uppercase tracking-[0.3em] text-[10px]">System Status: Operational</span>
+                  <span className="h-[1px] w-8 bg-zinc-800" />
+                </div>
+                
+                <p className="max-w-xl mx-auto text-zinc-400 font-medium text-sm md:text-base leading-relaxed tracking-tight">
+                  Advanced network hop visualization engine. Detect and map the physical path 
+                  of IP packets across the global internet backbone in real-time.
+                </p>
+              </div>
               
-              <div className="pt-8 animate-in fade-in duration-1000 delay-700 fill-mode-both">
+              {/* BUTTON: Clean reveal with a subtle border-pulse */}
+              <div className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-700 [animation-fill-mode:backwards]">
                 <button 
                   onClick={() => setHasStarted(true)}
-                  className="border border-white px-10 py-4 text-lg font-bold hover:bg-white hover:text-black transition-all cursor-pointer group"
+                  className="relative group overflow-hidden border border-zinc-700 hover:border-white px-12 py-4 text-sm font-bold tracking-[0.2em] transition-all cursor-pointer bg-black/20 backdrop-blur-sm"
                 >
-                  INITIALIZE_TRACE<span className="group-hover:translate-x-1 inline-block transition-transform">→</span>
+                  <span className="relative z-10 text-white group-hover:text-black transition-colors duration-300">
+                    INITIALIZE_TRACE_
+                  </span>
+                  <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                 </button>
               </div>
             </div>
 
-            {/* Subdued footer text */}
-            <div className="absolute bottom-6 text-[11px] text-zinc-700 animate-in fade-in duration-700 delay-1000 fill-mode-both">
-              MTR_VISUAL_V2 // NETWORK INTELLIGENCE PLATFORM
+            {/* FOOTER: Technical meta-data */}
+            <div className="absolute bottom-8 left-12 right-12 flex justify-between items-end animate-in fade-in duration-1000 delay-1000 [animation-fill-mode:backwards]">
+              <div className="text-[10px] text-zinc-600 space-y-1 text-left uppercase tracking-widest">
+                <div>Loc: 0.0.0.0 // Global</div>
+                <div>Engine: Three_v0.160</div>
+              </div>
+              <div className="text-[10px] text-zinc-600 text-right uppercase tracking-widest leading-relaxed">
+                MTR_VISUAL_V2 <br /> 
+                <span className="text-zinc-800 italic">Network Intelligence Platform</span>
+              </div>
             </div>
           </div>
         </div>
