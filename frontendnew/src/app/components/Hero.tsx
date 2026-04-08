@@ -1,8 +1,10 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import Globe from "./Globe";
 
 export default function Hero() {
+
+    const router = useRouter();
   return (
     <>
       <style>{`
@@ -415,8 +417,9 @@ export default function Hero() {
           </p>
 
           <div className="cta-group">
-            <button className="btn-primary">START TRACING</button>
-        
+            <button className="btn-primary" onClick={() => router.push("/visualizer")}>
+              START TRACING
+            </button>
           </div>
         </div>
 
