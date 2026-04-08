@@ -87,7 +87,7 @@ function GlobeEarth({ hops }: { hops: any[] }) {
       const type = classifyHop(h, i, validHops.length);
       const cfg  = TYPE_CONFIG[type];
       return {
-        pos:    latLngToVec3(h.geo.lat, h.geo.lng, RADIUS + 0.025),
+        pos:    latLngToVec3(h.geo.lat, h.geo.lng, RADIUS + 0.02),
         unitV:  latLngToVec3(h.geo.lat, h.geo.lng, 1),  // unit vector for slerp
         color:  cfg.color,
         hopNum: i + 1,
@@ -144,7 +144,7 @@ function GlobeEarth({ hops }: { hops: any[] }) {
           <group key={`hop-${i}`} position={m.pos}>
             {/* Outer ring */}
             <mesh>
-              <ringGeometry args={[0.028, 0.044, 20]} />
+              <ringGeometry args={[0.018, 0.014, 20]} />
               <meshBasicMaterial
                 color={m.color}
                 transparent
@@ -154,7 +154,7 @@ function GlobeEarth({ hops }: { hops: any[] }) {
             </mesh>
             {/* Core sphere */}
             <mesh>
-              <sphereGeometry args={[0.020, 10, 10]} />
+              <sphereGeometry args={[0.010, 5, 10]} />
               <meshBasicMaterial color={m.color} />
             </mesh>
           </group>
