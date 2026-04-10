@@ -65,7 +65,7 @@ app.post('/trace', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
-
-app.listen(process.env.PORT, () => {
-  console.log(`NetProbe running on http://localhost:${process.env.PORT}`)
+const PORT = process.env.PORT || 5000
+app.listen(PORT, () => {
+  console.log(`NetProbe running on http://localhost:${PORT}`)
 })
