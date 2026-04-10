@@ -86,7 +86,7 @@ The only way to run MTR without root permission headaches.
 
 ```bash
 # 1. Clone
-git clone <your-repo-link>
+git clone [<your-repo-link>](https://github.com/Nazmin-Babubaker/mtrvisual.git)
 cd traceroute
 
 # 2. Build & run
