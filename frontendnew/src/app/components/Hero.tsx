@@ -426,31 +426,39 @@ export default function Hero() {
        
         {/* Bottom stats */}
         <div className="bottom-bar">
-          <div className="bottom-stat">
-            <span className="bottom-stat-label">Distance</span>
-            <span className="bottom-stat-val">384,400 km</span>
-          </div>
-          <div className="bottom-divider" />
-          <div className="bottom-stat">
-            <span className="bottom-stat-label">Duration</span>
-            <span className="bottom-stat-val">72 hrs avg</span>
-          </div>
-          <div className="bottom-divider" />
-          <div className="bottom-stat">
-            <span className="bottom-stat-label">Altitude</span>
-            <span className="bottom-stat-val">408 km orbit</span>
-          </div>
-          <div className="bottom-divider" />
-          <div className="bottom-stat">
-            <span className="bottom-stat-label">Crew</span>
-            <span className="bottom-stat-val">4 passengers</span>
-          </div>
-          <div className="bottom-divider" />
-          <div className="bottom-stat">
-            <span className="bottom-stat-label">Next launch</span>
-            <span className="bottom-stat-val">Q2 · 2026</span>
-          </div>
-        </div>
+  <div className="bottom-stat">
+    <span className="bottom-stat-label">Nodes Scanned</span>
+    <span className="bottom-stat-val">1,284</span>
+  </div>
+
+  <div className="bottom-divider" />
+
+  <div className="bottom-stat">
+    <span className="bottom-stat-label">Active Routes</span>
+    <span className="bottom-stat-val">342</span>
+  </div>
+
+  <div className="bottom-divider" />
+
+  <div className="bottom-stat">
+    <span className="bottom-stat-label">Signal Strength</span>
+    <span className="bottom-stat-val">Optimal</span>
+  </div>
+
+  <div className="bottom-divider" />
+
+  <div className="bottom-stat">
+    <span className="bottom-stat-label">Latency Drift</span>
+    <span className="bottom-stat-val">±3 ms</span>
+  </div>
+
+  <div className="bottom-divider" />
+
+  <div className="bottom-stat">
+    <span className="bottom-stat-label">Trace Mode</span>
+    <span className="bottom-stat-val">Realtime</span>
+  </div>
+</div>
       </div>
     </>
   );

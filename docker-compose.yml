@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: traceroute-backend
+    ports:
+      - "5000:5000"
+    cap_add:
+      - NET_RAW
+    env_file:
+      - ./backend/.env   
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontendnew
+    container_name: traceroute-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped

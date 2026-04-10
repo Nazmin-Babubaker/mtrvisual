@@ -149,7 +149,6 @@ function PacketAnimator({ points, mapRef }: { points: [number, number][]; mapRef
 
   animRef.current = requestAnimationFrame(draw);
 }
-
     draw();
     return () => cancelAnimationFrame(animRef.current);
   }, [points, mapRef]);
@@ -164,8 +163,11 @@ export default function MapView({ hops }: { hops: any[] }) {
   const mapRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
 
-  const validHops = hops.filter((h) => h.geo?.lat && h.geo?.lng);
-  const points: [number, number][] = validHops.map((h) => [h.geo.lat, h.geo.lng]);
+  // Keep original index so map marker numbers match the sidebar's hop numbers
+  const validHops = hops
+    .map((h, originalIndex) => ({ hop: h, originalIndex }))
+    .filter(({ hop }) => hop.geo?.lat && hop.geo?.lng);
+  const points: [number, number][] = validHops.map(({ hop }) => [hop.geo.lat, hop.geo.lng]);
 
   useEffect(() => {
     if (mapRef.current && points.length > 1) {
@@ -232,18 +234,18 @@ export default function MapView({ hops }: { hops: any[] }) {
         {/* Dashed route */}
         <Polyline positions={points} pathOptions={{ color: "rgba(99,200,255,0.4)", weight: 1.5, dashArray: "6 8" }} />
 
-        {validHops.map((hop, i) => {
-          const type = classifyHop(hop, i, validHops.length);
+        {validHops.map(({ hop, originalIndex }) => {
+          const type = classifyHop(hop, originalIndex, hops.length);
           const cfg = TYPE_CONFIG[type];
-          const icon = buildIcon(type, i + 1);
+          const icon = buildIcon(type, originalIndex + 1);
           if (!icon) return null;
           return (
-            <Marker key={i} position={[hop.geo.lat, hop.geo.lng]} icon={icon}>
+            <Marker key={originalIndex} position={[hop.geo.lat, hop.geo.lng]} icon={icon}>
               <Popup>
                 <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, lineHeight: 1.75, minWidth: 170 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
                     <span style={{ background: cfg.color + "20", color: cfg.color, border: `1px solid ${cfg.color}44`, borderRadius: 4, padding: "2px 8px", fontSize: 9, fontWeight: 800, letterSpacing: "0.15em" }}>{cfg.label}</span>
-                    <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>HOP {i + 1}</span>
+                    <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>HOP {originalIndex + 1}</span>
                   </div>
                   <div style={{ color: "white", fontWeight: 500, fontSize: 13 }}>{hop.ip || "Silent Router"}</div>
                   {hop.geo?.city && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 }}>{hop.geo.city}, {hop.geo.country}</div>}
