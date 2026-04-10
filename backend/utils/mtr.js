@@ -1,24 +1,31 @@
-import {exec} from 'child_process'
-import {promisify} from 'util'
+import { spawn } from 'child_process';
 
-const execAsync = promisify(exec)
+export function runMtr(hostname) {
+  return new Promise((resolve, reject) => {
+    const args = ['--report', '--report-cycles', '5', '--no-dns', '--json', hostname];
+    const mtr = spawn('mtr', args, { timeout: 30000 });
 
-export async function runMtr(hostname){
+    let stdout = '';
+    let stderr = '';
 
-  const cmd  = `mtr --report --report-cycles 5 --no-dns --json ${hostname}`
+    mtr.stdout.on('data', (data) => { stdout += data; });
+    mtr.stderr.on('data', (data) => { stderr += data; });
 
-  const { stdout } = await execAsync(cmd, { timeout: 30000 })
-  const parsed = JSON.parse(stdout)
-  const hubs   = parsed?.report?.hubs ?? []
-
-
-  return hubs.map(hub => ({
-    hop:    hub.count,
-    ip:     hub.host === '???' ? null : hub.host,   
-    loss:   hub['Loss%'] ?? 0,
-    avgRtt: hub['Avg']   ?? 0,
-    
-  }))
-
-
+    mtr.on('close', (code) => {
+      if (code !== 0) return reject(new Error(stderr || 'MTR failed'));
+      
+      try {
+        const parsed = JSON.parse(stdout);
+        const hubs = parsed?.report?.hubs ?? [];
+        resolve(hubs.map(hub => ({
+          hop: hub.count,
+          ip: hub.host === '???' ? null : hub.host,
+          loss: hub['Loss%'] ?? 0,
+          avgRtt: hub['Avg'] ?? 0,
+        })));
+      } catch (e) {
+        reject(new Error('Failed to parse MTR output'));
+      }
+    });
+  });
 }
