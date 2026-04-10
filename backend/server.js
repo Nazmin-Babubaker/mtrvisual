@@ -5,7 +5,6 @@ import dotenv   from 'dotenv'
 import { runMtr }         from './utils/mtr.js'
 import { geolocateHops }  from './utils/geo.js'
 import dns from 'dns/promises';
-import isIpPrivate from 'private-ip'
 dotenv.config()
 
 const app = express()
@@ -34,11 +33,6 @@ app.post('/trace', async (req, res) => {
 
   const hostname = extractHostname(url.trim())
   if (hostname.length > 100) throw new Error("Too long")
-  
-  const addresses = await dns.resolve(hostname).catch(() => []);
-  if (addresses.some(ip => isIpPrivate(ip))) {
-   return res.status(403).json({ error: 'Probing internal networks is not allowed' });
-}
 
   if (!isValidHostname(hostname))
     return res.status(400).json({ error: 'Invalid hostname' })

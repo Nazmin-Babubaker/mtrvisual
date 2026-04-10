@@ -85,61 +85,70 @@ function PacketAnimator({ points, mapRef }: { points: [number, number][]; mapRef
     }
 
     function draw() {
-      const rect = canvas.parentElement!.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!canvas || !ctx || !canvas.parentElement) {
+    animRef.current = requestAnimationFrame(draw);
+    return;
+  }
 
-      tRef.current = (tRef.current + speed) % 1;
-      const gt = tRef.current * totalSegs;
-      const si = Math.min(Math.floor(gt), totalSegs - 1);
-      const st = gt - si;
+  const rect = canvas.parentElement.getBoundingClientRect();
 
-      const [la1, ln1] = points[si];
-      const [la2, ln2] = points[Math.min(si + 1, points.length - 1)];
-      const p1 = px(la1, ln1);
-      const p2 = px(la2, ln2);
-      const x = p1.x + (p2.x - p1.x) * st;
-      const y = p1.y + (p2.y - p1.y) * st;
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Outer glow
-      const g = ctx.createRadialGradient(x, y, 0, x, y, 18);
-      g.addColorStop(0, "rgba(99,200,255,0.5)");
-      g.addColorStop(1, "rgba(99,200,255,0)");
-      ctx.beginPath();
-      ctx.arc(x, y, 18, 0, Math.PI * 2);
-      ctx.fillStyle = g;
-      ctx.fill();
+  tRef.current = (tRef.current + speed) % 1;
+  const gt = tRef.current * totalSegs;
+  const si = Math.min(Math.floor(gt), totalSegs - 1);
+  const st = gt - si;
 
-      // Core
-      ctx.beginPath();
-      ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = "#63c8ff";
-      ctx.shadowColor = "#63c8ff";
-      ctx.shadowBlur = 14;
-      ctx.fill();
-      ctx.shadowBlur = 0;
+  const [la1, ln1] = points[si];
+  const [la2, ln2] = points[Math.min(si + 1, points.length - 1)];
+  const p1 = px(la1, ln1);
+  const p2 = px(la2, ln2);
+  const x = p1.x + (p2.x - p1.x) * st;
+  const y = p1.y + (p2.y - p1.y) * st;
 
-      // Trail
-      for (let i = 1; i <= 7; i++) {
-        const tt = ((tRef.current - i * speed * 3.5) + 1) % 1;
-        const gt2 = tt * totalSegs;
-        const si2 = Math.min(Math.floor(gt2), totalSegs - 1);
-        const st2 = gt2 - si2;
-        const [tl1, tg1] = points[si2];
-        const [tl2, tg2] = points[Math.min(si2 + 1, points.length - 1)];
-        const tp1 = px(tl1, tg1);
-        const tp2 = px(tl2, tg2);
-        const tx = tp1.x + (tp2.x - tp1.x) * st2;
-        const ty = tp1.y + (tp2.y - tp1.y) * st2;
-        ctx.beginPath();
-        ctx.arc(tx, ty, Math.max(3.5 - i * 0.4, 0.5), 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(99,200,255,${Math.max(0.45 - i * 0.055, 0)})`;
-        ctx.fill();
-      }
+  // Outer glow
+  const g = ctx.createRadialGradient(x, y, 0, x, y, 18);
+  g.addColorStop(0, "rgba(99,200,255,0.5)");
+  g.addColorStop(1, "rgba(99,200,255,0)");
+  ctx.beginPath();
+  ctx.arc(x, y, 18, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
 
-      animRef.current = requestAnimationFrame(draw);
-    }
+  // Core
+  ctx.beginPath();
+  ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+  ctx.fillStyle = "#63c8ff";
+  ctx.shadowColor = "#63c8ff";
+  ctx.shadowBlur = 14;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Trail
+  for (let i = 1; i <= 7; i++) {
+    const tt = ((tRef.current - i * speed * 3.5) + 1) % 1;
+    const gt2 = tt * totalSegs;
+    const si2 = Math.min(Math.floor(gt2), totalSegs - 1);
+    const st2 = gt2 - si2;
+
+    const [tl1, tg1] = points[si2];
+    const [tl2, tg2] = points[Math.min(si2 + 1, points.length - 1)];
+    const tp1 = px(tl1, tg1);
+    const tp2 = px(tl2, tg2);
+
+    const tx = tp1.x + (tp2.x - tp1.x) * st2;
+    const ty = tp1.y + (tp2.y - tp1.y) * st2;
+
+    ctx.beginPath();
+    ctx.arc(tx, ty, Math.max(3.5 - i * 0.4, 0.5), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(99,200,255,${Math.max(0.45 - i * 0.055, 0)})`;
+    ctx.fill();
+  }
+
+  animRef.current = requestAnimationFrame(draw);
+}
 
     draw();
     return () => cancelAnimationFrame(animRef.current);
