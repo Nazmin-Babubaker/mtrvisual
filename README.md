@@ -86,8 +86,8 @@ The only way to run MTR without root permission headaches.
 
 ```bash
 # 1. Clone
-git clone [<your-repo-link>](https://github.com/Nazmin-Babubaker/mtrvisual.git)
-cd traceroute
+git clone https://github.com/Nazmin-Babubaker/mtrvisual.git
+cd mtrvisual
 
 # 2. Build & run
 docker compose up --build
