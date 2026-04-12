@@ -320,10 +320,10 @@ function HopItem({ hop, index, total, selected, onSelect }: any) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.85)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{hop.ip || "Silent Router"}</div>
         {hop.geo?.city
-          ? <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{hop.geo.city}, {hop.geo.country}</div>
-          : <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 1, fontStyle: "italic" }}>no geolocation</div>}
+          ? <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>{hop.geo.city}, {hop.geo.country}</div>
+          : <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 1, fontStyle: "italic" }}>no geolocation</div>}
         {hop.geo?.org && (
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "monospace", letterSpacing: "0.02em" }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "monospace", letterSpacing: "0.02em" }}>
             {hop.geo.org}
           </div>
         )}
@@ -585,7 +585,7 @@ export default function VisualizerPage() {
             <input
               ref={inputRef}
               className={`search-input${inputError ? " err" : ""}`}
-              placeholder="Enter domain or IP — e.g. google.com"
+              placeholder="Enter domain — e.g. google.com"
               value={target}
               onChange={handleInputChange}
               onKeyDown={(e) => e.key === "Enter" && handleTrace()}
