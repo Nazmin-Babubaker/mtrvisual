@@ -5,23 +5,103 @@ import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 
 // ── Router type classification ────────────────────────────────────────────────
-export type RouterType = "local" | "isp" | "cdn" | "exchange" | "destination" | "unknown";
+export type RouterType = "local" | "isp" | "cdn" | "exchange" | "destination" | "unknown" | "backbone";
 
-export function classifyHop(hop: any, index: number, total: number): RouterType {
+export function classifyHop(
+  hop: any,
+  index: number,
+  total: number
+): RouterType {
+  const ip: string = hop.ip || "";
+  const orgRaw: string = hop.geo?.org || "";
+  const org = orgRaw.toLowerCase();
+
+  
   if (index === 0) return "local";
   if (index === total - 1) return "destination";
-  const ip: string = hop.ip || "";
-  const org: string = (hop.geo?.org || "").toLowerCase();
-  if (ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("172.16."))
-    return "local";
+
+
   if (
-    org.includes("cloudflare") || org.includes("akamai") ||
-    org.includes("fastly") || org.includes("amazon") ||
-    org.includes("google") || org.includes("cdn")
-  ) return "cdn";
-  if (org.includes("exchange") || org.includes(" ix") || org.includes("peering") || org.includes("nap"))
+    ip.startsWith("10.") ||
+    ip.startsWith("192.168.") ||
+    (ip >= "172.16.0.0" && ip <= "172.31.255.255") ||
+    ip.startsWith("127.") ||
+    ip === "0.0.0.0"
+  ) {
+    return "local";
+  }
+
+  
+  const CDN_KEYWORDS = [
+    "cloudflare",
+    "akamai",
+    "fastly",
+    "edgecast",
+    "cdn",
+    "cloudfront",
+    "google",
+    "amazon",
+    "aws",
+    "gstatic",
+    "azure",
+    "microsoft"
+  ];
+
+  if (CDN_KEYWORDS.some(k => org.includes(k))) {
+    return "cdn";
+  }
+
+ 
+  const IX_KEYWORDS = [
+    "internet exchange",
+    " ix ",
+    " ix-",
+    "-ix",
+    "peering",
+    "nap"
+  ];
+
+  if (IX_KEYWORDS.some(k => org.includes(k))) {
     return "exchange";
-  if (index < 4) return "isp";
+  }
+
+  const BACKBONE_KEYWORDS = [
+    "level 3",
+    "lumen",
+    "telia",
+    "ntt",
+    "gtt",
+    "cogent",
+    "tata communications",
+    "verizon",
+    "zayo"
+  ];
+
+  if (BACKBONE_KEYWORDS.some(k => org.includes(k))) {
+    return "backbone";
+  }
+
+  const ISP_KEYWORDS = [
+    "airtel",
+    "jio",
+    "isp",
+    "vodafone",
+    "bsnl",
+    "comcast",
+    "spectrum",
+    "att",
+    "telecom",
+    "broadband",
+    "internet service"
+  ];
+
+  if (ISP_KEYWORDS.some(k => org.includes(k))) {
+    return "isp";
+  }
+
+  if (index <= 3) return "isp";
+
+
   return "unknown";
 }
 
@@ -30,6 +110,11 @@ export const TYPE_CONFIG: Record<RouterType, { color: string; label: string; rin
   isp:         { color: "#3b82f6", label: "ISP",    ring: "rgba(59,130,246,0.3)" },
   cdn:         { color: "#f97316", label: "CDN",    ring: "rgba(249,115,22,0.3)" },
   exchange:    { color: "#a855f7", label: "IX",     ring: "rgba(168,85,247,0.3)" },
+    backbone: {
+    color: "#0ea5e9",
+    label: "BACKBONE",
+    ring: "rgba(14,165,233,0.3)"
+  },
   destination: { color: "#ef4444", label: "DEST",   ring: "rgba(239,68,68,0.3)" },
   unknown:     { color: "#94a3b8", label: "HOP",    ring: "rgba(148,163,184,0.18)" },
 };

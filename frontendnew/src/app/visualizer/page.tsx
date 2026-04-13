@@ -275,6 +275,7 @@ function Legend() {
   const entries: Array<{ type: keyof typeof TYPE_CONFIG; desc: string }> = [
     { type: "local",       desc: "Your machine / LAN" },
     { type: "isp",         desc: "ISP router" },
+    { type: "backbone",    desc: "Core internet backbone network" },
     { type: "exchange",    desc: "Internet Exchange" },
     { type: "cdn",         desc: "CDN / Cloud edge" },
     { type: "destination", desc: "Target host" },
