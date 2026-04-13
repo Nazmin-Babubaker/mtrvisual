@@ -282,7 +282,7 @@ function Legend() {
     { type: "unknown",     desc: "Unknown hop" },
   ];
   return (
-    <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+    <div style={{ padding: "15px 10px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
       <div style={{ fontSize: 9, letterSpacing: "0.2em", color: "rgba(255,255,255,0.3)", marginBottom: 10, fontFamily: "'Syne', sans-serif", fontWeight: 600 }}>NODE TYPES</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
         {entries.map(({ type, desc }) => {
@@ -290,8 +290,8 @@ function Legend() {
           return (
             <div key={type} style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: cfg.color, boxShadow: `0 0 6px ${cfg.color}88`, flexShrink: 0 }} />
-              <span style={{ fontSize: 9, letterSpacing: "0.12em", color: cfg.color, fontWeight: 700, fontFamily: "'Syne', sans-serif", minWidth: 36 }}>{cfg.label}</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "'DM Sans', sans-serif" }}>{desc}</span>
+              <span style={{ fontSize: 10, letterSpacing: "0.12em", color: cfg.color, fontWeight: 700, fontFamily: "'Syne', sans-serif", minWidth: 36 }}>{cfg.label}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: "'DM Sans', sans-serif" }}>{desc}</span>
             </div>
           );
         })}
@@ -525,7 +525,7 @@ export default function VisualizerPage() {
           background:rgba(8,15,32,0.8); min-height:0; overflow:hidden;
         }
         .sidebar-header { padding:16px 20px 12px; border-bottom:1px solid rgba(255,255,255,0.05); flex-shrink:0; }
-        .sidebar-title { font-family:'Syne',sans-serif; font-size:9px; font-weight:700; letter-spacing:.24em; color:rgba(255,255,255,0.35); text-transform:uppercase; }
+        .sidebar-title { font-family:'Syne',sans-serif; font-size:10px; font-weight:700; letter-spacing:.24em; color:rgba(255,255,255,0.67); text-transform:uppercase; }
         .hop-list { flex:1; overflow-y:auto; min-height:0; }
         .hop-list::-webkit-scrollbar { width:3px; }
         .hop-list::-webkit-scrollbar-track { background:transparent; }
