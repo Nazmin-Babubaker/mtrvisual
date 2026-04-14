@@ -135,7 +135,13 @@ cd frontendnew
 npm install
 npm run dev
 ```
+### ⚠️ OS Compatibility Notes
+- ✅ Linux → Fully supported (recommended for development & production)
+- ⚠️ macOS → Works, but may require manual mtr installation and permissions
+- ❌ Windows (native) → Not supported (no native mtr)
+- ✅ Windows (with WSL) → Fully supported (acts like Linux)
 
+> 💡 If you're on Windows, use WSL or Docker to run the backend.
 
 ## ✦ Tech Stack
 
