@@ -371,97 +371,104 @@ export default function VisualizerPage() {
   const [traceError,  setTraceError ] = useState<TraceError | null>(null);
   const [inputError,  setInputError ] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+const abortCtrlRef = useRef<AbortController | null>(null);
 
   const handleTrace = useCallback(async () => {
-    // ── 1. Client-side validation ──────────────────────────────────────────
-    const validationMsg = validateTarget(target);
-    if (validationMsg) {
-      setInputError(validationMsg);
-      inputRef.current?.focus();
+  const validationMsg = validateTarget(target);
+  if (validationMsg) {
+    setInputError(validationMsg);
+    inputRef.current?.focus();
+    return;
+  }
+  setInputError(null);
+  setTraceError(null);
+  setLoading(true);
+  setHops([]);
+  setSelectedHop(null);
+
+  const ctrl = new AbortController();
+  abortCtrlRef.current = ctrl;
+
+  const cleanTarget = target.trim().replace(/^https?:\/\//i, "").split("/")[0];
+
+  try {
+    let res: Response;
+    try {
+      res = await fetch("http://localhost:5000/trace", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ url: cleanTarget }),
+        signal:  ctrl.signal,     
+      });
+    } catch (fetchErr: any) {
+      if (fetchErr?.name === "AbortError") return;   // user cancelled, stay silent
+      setTraceError({
+        kind: "network",
+        message: "Could not reach the backend server. Make sure it is running on port 5000.",
+      });
       return;
     }
-    setInputError(null);
-    setTraceError(null);
-    setLoading(true);
-    setHops([]);
-    setSelectedHop(null);
 
-    const cleanTarget = target.trim().replace(/^https?:\/\//i, "").split("/")[0];
-
+    let data: any;
     try {
-      // ── 2. Fetch with timeout ────────────────────────────────────────────
-      let res: Response;
-      try {
-        res = await fetch("http://localhost:5000/trace", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ url: cleanTarget }),
-          signal:  AbortSignal.timeout(30_000),
-        });
-      } catch (fetchErr: any) {
-        const isTimeout = fetchErr?.name === "TimeoutError" || fetchErr?.name === "AbortError";
-        setTraceError({
-          kind: "network",
-          message: isTimeout
-            ? "The trace timed out after 30 seconds. The target may be unreachable or blocking ICMP probes."
-            : "Could not reach the backend server. Make sure it is running on port 5000.",
-        });
-        return;
-      }
-
-      // ── 3. Parse JSON ────────────────────────────────────────────────────
-      let data: any;
-      try {
-        data = await res.json();
-      } catch {
-        setTraceError({ kind: "backend", message: `Server returned an unreadable response (HTTP ${res.status}). Check the backend logs.` });
-        return;
-      }
-
-      // ── 4. HTTP error status ─────────────────────────────────────────────
-      if (!res.ok) {
-        setTraceError({
-          kind: "backend",
-          message: data?.error
-            ? `Backend error: ${data.error}`
-            : `Request failed with HTTP ${res.status}.`,
-        });
-        return;
-      }
-
-      // ── 5. Backend error field ───────────────────────────────────────────
-      if (data.error) {
-        const msg: string = data.error.toLowerCase();
-        const friendly =
-          msg.includes("invalid") || msg.includes("not a valid")
-            ? `"${cleanTarget}" is not a valid target. Try a hostname like google.com or an IP like 8.8.8.8.`
-          : msg.includes("resolv") || msg.includes("not found") || msg.includes("unknown host")
-            ? `Could not resolve "${cleanTarget}". Check the spelling or try an IP address instead.`
-          : msg.includes("permission") || msg.includes("operation not permitted")
-            ? "Permission denied. Ensure the backend container has NET_RAW capability set in docker-compose."
-          : msg.includes("timeout")
-            ? "The trace timed out. The target host may be filtering ICMP packets."
-          : data.error; // raw fallback
-        setTraceError({ kind: "backend", message: friendly });
-        return;
-      }
-
-      // ── 6. Empty hops ────────────────────────────────────────────────────
-      if (!data.hops || data.hops.length === 0) {
-        setTraceError({
-          kind: "empty",
-          message: "The trace completed but returned no hops. The target may be on your local network or all probes were filtered.",
-        });
-        return;
-      }
-
-      // ── 7. Success ───────────────────────────────────────────────────────
-      setHops(data.hops);
-
-    } finally {
-      setLoading(false);
+      data = await res.json();
+    } catch {
+      setTraceError({ kind: "backend", message: `Server returned an unreadable response (HTTP ${res.status}). Check the backend logs.` });
+      return;
     }
-  }, [target]);
+
+    if (!res.ok) {
+      setTraceError({
+        kind: "backend",
+        message: data?.error ? `Backend error: ${data.error}` : `Request failed with HTTP ${res.status}.`,
+      });
+      return;
+    }
+
+    if (data.error) {
+      const msg: string = data.error.toLowerCase();
+      const friendly =
+        msg.includes("invalid") || msg.includes("not a valid")
+          ? `"${cleanTarget}" is not a valid target. Try a hostname like google.com or an IP like 8.8.8.8.`
+        : msg.includes("resolv") || msg.includes("not found") || msg.includes("unknown host")
+          ? `Could not resolve "${cleanTarget}". Check the spelling or try an IP address instead.`
+        : msg.includes("permission") || msg.includes("operation not permitted")
+          ? "Permission denied. Ensure the backend container has NET_RAW capability set in docker-compose."
+        : msg.includes("timeout")
+          ? "The trace timed out. The target host may be filtering ICMP packets."
+        : data.error;
+      setTraceError({ kind: "backend", message: friendly });
+      return;
+    }
+
+    if (!data.hops || data.hops.length === 0) {
+      setTraceError({
+        kind: "empty",
+        message: "The trace completed but returned no hops. The target may be on your local network or all probes were filtered.",
+      });
+      return;
+    }
+
+    setHops(data.hops);
+
+  } finally {
+    setLoading(false);
+    abortCtrlRef.current = null;
+  }
+}, [target]);
+
+const handleCancel = useCallback(async () => {
+  // 1. Kill the fetch on the frontend
+  abortCtrlRef.current?.abort();
+  abortCtrlRef.current = null;
+  setLoading(false);
+  setTraceError(null);
+
+  try {
+    await fetch("http://localhost:5000/cancel", { method: "POST" });
+  } catch {
+  }
+}, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTarget(e.target.value);
@@ -510,6 +517,14 @@ export default function VisualizerPage() {
         }
         .search-btn:hover:not(:disabled) { background:rgba(59,130,246,0.35); border-color:rgba(59,130,246,0.7); color:white; }
         .search-btn:disabled { opacity:.5; cursor:not-allowed; }
+        .cancel-btn {
+  position:absolute; right:4px; top:4px; bottom:4px; padding:0 16px;
+  background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4);
+  border-radius:4px; color:#fca5a5; font-family:'Syne',sans-serif;
+  font-size:10px; font-weight:700; letter-spacing:.15em; cursor:pointer;
+  transition:all .2s; white-space:nowrap;
+}
+.cancel-btn:hover { background:rgba(239,68,68,0.28); border-color:rgba(239,68,68,0.7); color:white; }
 
         .back-btn {
           font-size:12px; color:rgba(255,255,255,0.4); cursor:pointer;
@@ -593,9 +608,15 @@ export default function VisualizerPage() {
               aria-invalid={!!inputError}
               aria-describedby={inputError ? "input-err" : undefined}
             />
-            <button className="search-btn" onClick={handleTrace} disabled={loading}>
-              {loading ? "TRACING..." : "TRACE →"}
-            </button>
+            {loading ? (
+  <button className="cancel-btn" onClick={handleCancel}>
+    ✕ CANCEL
+  </button>
+) : (
+  <button className="search-btn" onClick={handleTrace}>
+    TRACE →
+  </button>
+)}
             {inputError && <InputError message={inputError} />}
           </div>
 

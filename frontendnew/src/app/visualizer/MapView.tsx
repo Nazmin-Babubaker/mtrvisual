@@ -110,11 +110,11 @@ export const TYPE_CONFIG: Record<RouterType, { color: string; label: string; rin
   isp:         { color: "#3b82f6", label: "ISP",    ring: "rgba(59,130,246,0.3)" },
   cdn:         { color: "#f97316", label: "CDN",    ring: "rgba(249,115,22,0.3)" },
   exchange:    { color: "#a855f7", label: "IX",     ring: "rgba(168,85,247,0.3)" },
-    backbone: {
-    color: "#0ea5e9",
-    label: "BACKBONE",
-    ring: "rgba(14,165,233,0.3)"
-  },
+   backbone: {
+  color: "#eab308",
+  label: "BACKBONE",
+  ring: "rgba(234, 179, 8, 0.3)"
+},
   destination: { color: "#ef4444", label: "DEST",   ring: "rgba(239,68,68,0.3)" },
   unknown:     { color: "#94a3b8", label: "HOP",    ring: "rgba(148,163,184,0.18)" },
 };
