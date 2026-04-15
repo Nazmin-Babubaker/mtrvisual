@@ -120,6 +120,8 @@ docker compose up --build
 
 ### 📦 Without Docker
 
+> ⚠️ Requires **Node.js 20 or above**. Check your version with `node -v`.
+
 **Backend**
 ```bash
 cd backend
@@ -142,6 +144,18 @@ npm run dev
 - ✅ Windows (with WSL) → Fully supported (acts like Linux)
 
 > 💡 If you're on Windows, use WSL or Docker to run the backend.
+
+> 💡 **Linux — mtr not found?** Install it with:
+> ```bash
+> # Debian / Ubuntu / WSL
+> sudo apt install mtr
+>
+> # Fedora / RHEL
+> sudo dnf install mtr
+>
+> # Arch
+> sudo pacman -S mtr
+> 
 
 ## ✦ Tech Stack
 
